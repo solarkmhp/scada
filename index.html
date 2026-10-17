@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống SCADA Năng Lượng & Multi-Pack BMS - Đa Hãng Chuẩn Hóa</title>
-    <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=uyUQsnvUdyy-phaMOlwFrIzghCo-tl_p3G2e7eJzS6nK9po6ILmsirryRp2LMqanF9cmCkfqw-gN2nEc3BJcs3rpy8YOWv9Fo25Qk_-dgS4SNJp0wO9kWzjEbpF6EoXD0ALltfOwv5eKJZtluyvPugtYQmD0uHARG6uVeD1O0H_B2LHAnBFyaFfS642v96lxI3T0EkhVmHWnt4k8rQXrzoMjegnwiWSyR5FxK5E9rFs-mi8BD2lZssBo6QGWD_OP2x3WF13_7GBaR74HpogxhvDsZtqqt-Yrb3Pq-UJdSaAiw4Q09VsUbd-ydZXOe7pH" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
+    <title>SCADA Năng Lượng & BMS - Phân Quyền Bảo Mật</title>
+    <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=PJdTmAuUQkXRmR5Rxu9ty8Ma5n88agcagVVPJTvBxE-KJ9_eRZPC3z9vtRCxIL6sR949BzSN9Ps6slvKaHFCTG6G7uzRtTMsP9qY6P13rATP9V8bBDOUsiUgzayqMuRgfIoNPRvjEuOeAiuT2CLVn0uKIwC-qJmC6__RTYiaQgDu92PPUZgsrZawKXomm-ZrCBA67htYDCqn5LnBIelezG5-T7gn_LUIVOy61K-ba0-UMfDG76JJVhJRYI5wijfmbDXcky5I3Do2ySVMB08k7JvxWCIguZgnggxL5uMCEcV5N2xxcNXxHHgcI-SUm_fV" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
         body {
@@ -99,8 +100,46 @@
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col">
 
+    <!-- MODAL ĐĂNG NHẬP / NHẬP MÃ PIN XÁC THỰC TRẠM -->
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-7 max-w-md w-full mx-4 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 mx-auto flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white tracking-wide">XÁC THỰC QUYỀN TRUY CẬP TRẠM</h2>
+                <p class="text-xs text-slate-400">Mỗi thiết bị chỉ người sở hữu mới được quyền xem và cấu hình</p>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Tên đăng nhập / Mã tài khoản</label>
+                    <input id="loginUsername" type="text" placeholder="Ví dụ: anh_hung hoặc admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 mono focus:border-cyan-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1 font-semibold">Mật khẩu PIN bí mật</label>
+                    <input id="loginPin" type="password" placeholder="Nhập mã PIN bí mật" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 mono focus:border-cyan-500 outline-none">
+                </div>
+                <div id="loginErrorMsg" class="hidden text-rose-400 text-center font-semibold text-xs py-1">
+                    Tên đăng nhập hoặc mã PIN không chính xác!
+                </div>
+                <button onclick="handleLoginSubmit()" class="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-key"></i> ĐĂNG NHẬP VÀO TRẠM
+                </button>
+            </div>
+
+            <!-- Gợi ý tài khoản demo -->
+            <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+                <span class="font-bold text-slate-300 block">Tài khoản demo:</span>
+                <div>- <b>anh_hung</b> (PIN: <code class="text-cyan-400">1111</code>): Chỉ xem đúng trạm <b>Nhà Anh Hùng</b></div>
+                <div>- <b>xuong_cokhi</b> (PIN: <code class="text-cyan-400">2222</code>): Chỉ xem đúng trạm <b>Xưởng Cơ Khí</b></div>
+                <div>- <b>admin</b> (PIN: <code class="text-amber-400">8888</code>): Toàn quyền xem mọi trạm kỹ thuật</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Header điều hướng -->
-    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
@@ -108,28 +147,36 @@
                 </div>
                 <div>
                     <h1 class="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                        SCADA HYBRID & MULTI-PACK BMS
+                        SCADA HYBRID & BMS CLOUD
                         <span id="headerBrandBadge" class="text-[10px] px-2 py-0.5 rounded font-bold mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">DEYE HYBRID</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Đầy Đủ Cài Đặt Sạc/Xả Cơ Bản & Khung Giờ Riêng Cho Từng Hãng</p>
+                    <p class="text-xs text-slate-400">Phân Quyền Truy Cập Bảo Mật Riêng Biệt Từng Khách Hàng</p>
                 </div>
             </div>
 
-            <!-- Bộ chuyển trạm -->
+            <!-- Bộ chuyển trạm & Thông tin người dùng đăng nhập -->
             <div class="flex items-center space-x-3">
+                
+                <!-- Chỉ hiển thị các trạm được cấp quyền -->
                 <div class="flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
                     <i class="fa-solid fa-house-signal text-cyan-400 text-xs"></i>
                     <select id="stationSelector" onchange="changeStation(this.value)" class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer mono">
-                        <option value="station_01">Trạm 01: LuxPower SNA 5000 (3 Khung AC Charge / Discharge)</option>
-                        <option value="station_02" selected>Trạm 02: Deye SUN-8K Hybrid (Chuẩn 6 Khung Giờ TOU)</option>
-                        <option value="station_03">Trạm 03: SolaX X1-Hybrid G4 (Cắt Điện Mất Lưới EPS)</option>
-                        <option value="station_04">Trạm 04: Senergy SE-6KHB (Pin Cấp Tải Tự Dùng)</option>
+                        <!-- Tự động đổ danh sách trạm được cấp quyền qua JavaScript -->
                     </select>
+                </div>
+
+                <!-- Thẻ người dùng đăng nhập & nút Đăng xuất -->
+                <div class="flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+                    <i class="fa-solid fa-user-shield text-emerald-400"></i>
+                    <span id="loggedUserName" class="text-slate-300 font-semibold mono">Chưa đăng nhập</span>
+                    <button onclick="handleLogout()" title="Đăng xuất" class="ml-2 text-slate-400 hover:text-rose-400 transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
                 </div>
 
                 <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Trực Tuyến</span>
+                    <span>Online</span>
                 </div>
             </div>
         </div>
@@ -312,7 +359,7 @@
             </div>
         </div>
 
-        <!-- 2. PHẦN CÀI ĐẶT THÔNG SỐ SẠC / XẢ CƠ BẢN & BẢO VỆ PIN (GIỮ NGUYÊN ĐẦY ĐỦ, KHÔNG BỊ MẤT) -->
+        <!-- 2. PHẦN CÀI ĐẶT THÔNG SỐ SẠC / XẢ CƠ BẢN & BẢO VỆ PIN -->
         <div class="bg-slate-900/90 border border-amber-500/40 rounded-3xl p-6 shadow-2xl space-y-6">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                 <div class="flex items-center space-x-3">
@@ -399,7 +446,7 @@
                 </div>
 
                 <!-- Khối 3: Chế Độ Nguồn & Bán Lưới -->
-                <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-3">
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3">
                     <span class="font-bold text-emerald-400 uppercase block border-b border-slate-800 pb-2"><i class="fa-solid fa-gear mr-1"></i>3. Chế Độ Vận Hành Chung</span>
                     <div>
                         <label class="block text-slate-400 mb-1">Chế Độ Ưu Tiên Nguồn (Work Mode):</label>
@@ -422,7 +469,7 @@
             </div>
         </div>
 
-        <!-- 3. BẢNG CÀI ĐẶT KHUNG GIỜ SẠC/XẢ ĐA HÃNG (CHUYỂN TAB THÔNG MINH CHO TỪNG HÃNG) -->
+        <!-- 3. BẢNG CÀI ĐẶT KHUNG GIỜ SẠC/XẢ ĐA HÃNG -->
         <div class="bg-slate-900/90 border border-cyan-500/40 rounded-3xl p-6 shadow-2xl space-y-6">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                 <div class="flex items-center space-x-3">
@@ -485,7 +532,6 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <!-- Khung LuxPower 1 -->
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-center font-bold text-cyan-400 border-b border-slate-800 pb-2">
                             <span>Khung Sạc Lưới 1 (Ban Đêm)</span>
@@ -496,7 +542,7 @@
                             <div><span class="text-slate-500 block">Kết thúc:</span><input type="time" value="05:30" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
                         </div>
                         <div>
-                            <span class="text-slate-400 block mb-1">Công suất sạc / Dòng sạc:</span>
+                            <span class="text-slate-400 block mb-1">Công suất sạc:</span>
                             <input type="number" value="3000" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"> W
                         </div>
                         <div>
@@ -505,7 +551,6 @@
                         </div>
                     </div>
 
-                    <!-- Khung LuxPower 2 -->
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-center font-bold text-amber-400 border-b border-slate-800 pb-2">
                             <span>Khung Xả Pin 1 (Giờ Cao Điểm)</span>
@@ -516,7 +561,7 @@
                             <div><span class="text-slate-500 block">Kết thúc:</span><input type="time" value="22:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
                         </div>
                         <div>
-                            <span class="text-slate-400 block mb-1">Công suất xả tối đa:</span>
+                            <span class="text-slate-400 block mb-1">Công suất xả:</span>
                             <input type="number" value="4500" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"> W
                         </div>
                         <div>
@@ -525,7 +570,6 @@
                         </div>
                     </div>
 
-                    <!-- Khung LuxPower 3 -->
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-center font-bold text-slate-400 border-b border-slate-800 pb-2">
                             <span>Khung Dự Phòng 3 (Tùy Chọn)</span>
@@ -536,11 +580,11 @@
                             <div><span class="text-slate-500 block">Kết thúc:</span><input type="time" value="14:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
                         </div>
                         <div>
-                            <span class="text-slate-400 block mb-1">Công suất cài đặt:</span>
+                            <span class="text-slate-400 block mb-1">Công suất:</span>
                             <input type="number" value="2000" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"> W
                         </div>
                         <div>
-                            <span class="text-slate-400 block mb-1">Ngưỡng SoC giới hạn:</span>
+                            <span class="text-slate-400 block mb-1">Ngưỡng SoC:</span>
                             <input type="number" value="50" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-400 font-bold mono"> %
                         </div>
                     </div>
@@ -550,12 +594,12 @@
             <!-- TAB 3: GIAO DIỆN SOLAX & SENERGY -->
             <div id="tabContent_solax" class="hidden space-y-4 text-xs">
                 <div class="p-3 bg-sky-500/10 border border-sky-500/30 rounded-xl text-sky-300">
-                    <i class="fa-solid fa-circle-info mr-1"></i> Biến tần <b>SolaX & Senergy</b> quản lý theo chế độ Force Time Use (Cưỡng bức sạc/xả trong khoảng thời gian xác định):
+                    <i class="fa-solid fa-circle-info mr-1"></i> Biến tần <b>SolaX & Senergy</b> quản lý theo chế độ Force Time Use:
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                        <span class="font-bold text-white block border-b border-slate-800 pb-2">Khung Cưỡng Bức Sạc Lưới (Force Charge Period 1)</span>
+                        <span class="font-bold text-white block border-b border-slate-800 pb-2">Khung Cưỡng Bức Sạc Lưới (Force Charge)</span>
                         <div class="grid grid-cols-2 gap-2">
                             <div><span class="text-slate-500 block">Start:</span><input type="time" value="01:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
                             <div><span class="text-slate-500 block">End:</span><input type="time" value="06:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
@@ -564,7 +608,7 @@
                     </div>
 
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                        <span class="font-bold text-white block border-b border-slate-800 pb-2">Khung Cho Phép Xả (Discharge Allowed Period 2)</span>
+                        <span class="font-bold text-white block border-b border-slate-800 pb-2">Khung Cho Phép Xả (Discharge Allowed)</span>
                         <div class="grid grid-cols-2 gap-2">
                             <div><span class="text-slate-500 block">Start:</span><input type="time" value="18:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
                             <div><span class="text-slate-500 block">End:</span><input type="time" value="23:00" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-slate-200 mono"></div>
@@ -603,8 +647,36 @@
 
     </main>
 
-    <!-- SCRIPT ĐIỀU KHIỂN & CHUYỂN ĐỔI TAB ĐA HÃNG -->
+    <!-- SCRIPT ĐIỀU KHIỂN & BẢO MẬT USER ACCESS -->
     <script>
+        // CẤU HÌNH BẢO MẬT & PHÂN QUYỀN TRUY CẬP TỪNG MÁY / TỪNG KHÁCH HÀNG
+        const userAccounts = {
+            "anh_hung": {
+                name: "Anh Hùng (Hải Phòng)",
+                pin: "1111",
+                role: "user",
+                allowedStations: ["station_01"] // Chỉ xem duy nhất trạm của mình
+            },
+            "xuong_cokhi": {
+                name: "Xưởng Cơ Khí (Hà Nội)",
+                pin: "2222",
+                role: "user",
+                allowedStations: ["station_02"] // Chỉ xem duy nhất trạm xưởng của mình
+            },
+            "kho_quangninh": {
+                name: "Kho Lưu Trữ (Quảng Ninh)",
+                pin: "3333",
+                role: "user",
+                allowedStations: ["station_03"]
+            },
+            "admin": {
+                name: "Quản Trị Viên (Kỹ Thuật)",
+                pin: "8888",
+                role: "admin",
+                allowedStations: ["station_01", "station_02", "station_03", "station_04"] // Admin xem được toàn bộ
+            }
+        };
+
         const defaultDeyeTouSlots = [
             { slot: 1, time: "05:00", power: 5000, volt: 56.4, soc: 95, grid: true,  gen: false, note: "Sạc đêm giờ thấp điểm giá rẻ" },
             { slot: 2, time: "08:00", power: 4500, volt: 52.0, soc: 60, grid: false, gen: false, note: "Cấp tải sáng, chờ mặt trời lên" },
@@ -618,7 +690,7 @@
 
         const stationsDatabase = {
             "station_01": {
-                name: "Trạm 01: LuxPower SNA 5000",
+                name: "Trạm 01: LuxPower SNA 5000 (Nhà Anh Hùng)",
                 brand: "LUXPOWER",
                 brandTab: "luxpower",
                 invModel: "LuxPower SNA 5000 Eco Hybrid",
@@ -646,7 +718,7 @@
                 ]
             },
             "station_02": {
-                name: "Trạm 02: Deye SUN-8K Hybrid",
+                name: "Trạm 02: Deye SUN-8K (Xưởng Cơ Khí)",
                 brand: "DEYE",
                 brandTab: "deye",
                 invModel: "Deye SUN-8K-SG04LP1-EU",
@@ -675,7 +747,7 @@
                 ]
             },
             "station_03": {
-                name: "Trạm 03: SolaX X1-Hybrid",
+                name: "Trạm 03: SolaX X1-Hybrid (Kho Quảng Ninh)",
                 brand: "SOLAX",
                 brandTab: "solax",
                 invModel: "SolaX X1-Hybrid G4 6.0kW",
@@ -701,7 +773,7 @@
                 ]
             },
             "station_04": {
-                name: "Trạm 04: Senergy SE-6KHB",
+                name: "Trạm 04: Senergy SE-6KHB (Biệt Thự)",
                 brand: "SENERGY",
                 brandTab: "solax",
                 invModel: "Senergy SE-6KHB Hybrid",
@@ -728,8 +800,51 @@
             }
         };
 
-        let currentStation = "station_02";
+        let currentStation = "station_01";
         let activePackIndex = 0;
+        let loggedInUser = null;
+
+        // Xử lý đăng nhập phân quyền
+        function handleLoginSubmit() {
+            const userVal = document.getElementById('loginUsername').value.trim();
+            const pinVal = document.getElementById('loginPin').value.trim();
+            const err = document.getElementById('loginErrorMsg');
+
+            if (userAccounts[userVal] && userAccounts[userVal].pin === pinVal) {
+                loggedInUser = userAccounts[userVal];
+                localStorage.setItem('scada_logged_user', userVal);
+                err.classList.add('hidden');
+                document.getElementById('loginModal').classList.add('hidden');
+                applyUserPermissions();
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('scada_logged_user');
+            loggedInUser = null;
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginPin').value = '';
+        }
+
+        // Khởi tạo danh sách trạm theo đúng quyền của User
+        function applyUserPermissions() {
+            document.getElementById('loggedUserName').innerText = loggedInUser.name;
+            const selector = document.getElementById('stationSelector');
+            selector.innerHTML = '';
+
+            loggedInUser.allowedStations.forEach(stId => {
+                const opt = document.createElement('option');
+                opt.value = stId;
+                opt.innerText = stationsDatabase[stId].name;
+                selector.appendChild(opt);
+            });
+
+            // Chọn trạm đầu tiên được phân quyền
+            currentStation = loggedInUser.allowedStations[0];
+            changeStation(currentStation);
+        }
 
         function changeStation(id) {
             currentStation = id;
@@ -749,7 +864,6 @@
             selectPack(0);
         }
 
-        // Chuyển Tab Khung giờ giữa các hãng
         function switchBrandTab(tab) {
             ['deye', 'luxpower', 'solax'].forEach(t => {
                 const btn = document.getElementById(`tabBtn_${t}`);
@@ -764,7 +878,6 @@
             });
         }
 
-        // Load thông số cài đặt cơ bản
         function loadBasicConfig(cfg) {
             document.getElementById('cfgBatType').value = cfg.batType;
             document.getElementById('cfgMaxChgCurr').value = cfg.maxChgCurr;
@@ -782,11 +895,7 @@
         }
 
         function saveAndApplyBasicConfig() {
-            alert(`[LƯU THÀNH CÔNG] Đã ghi các thông số sạc/xả cơ bản xuống biến tần:\n` +
-                  `- Dòng sạc tối đa: ${document.getElementById('cfgMaxChgCurr').value}A\n` +
-                  `- Dòng xả tối đa: ${document.getElementById('cfgMaxDsgCurr').value}A\n` +
-                  `- Điện áp Bulk sạc đầy: ${document.getElementById('cfgBulkVolt').value}V\n` +
-                  `- Ngắt xả có lưới: ${document.getElementById('cfgOnGridSoc').value}% | Mất lưới: ${document.getElementById('cfgOffGridSoc').value}%`);
+            alert(`[LƯU THÀNH CÔNG] Đã ghi các thông số sạc/xả cơ bản xuống biến tần!`);
         }
 
         function resetDefaultConfig() {
@@ -845,7 +954,7 @@
         }
 
         function saveCurrentBrandTou() {
-            alert(`[GHI THÀNH CÔNG] Đã ghi các khung giờ Time of Use vào biến tần ${stationsDatabase[currentStation].invModel}!`);
+            alert(`[GHI THÀNH CÔNG] Đã ghi bảng khung giờ vào biến tần ${stationsDatabase[currentStation].invModel}!`);
         }
 
         function renderEnergyTopology(data) {
@@ -1020,7 +1129,15 @@
 
         window.onload = () => {
             renderTouTable();
-            changeStation('station_02');
+            // Kiểm tra trạng thái đã đăng nhập chưa
+            const savedUser = localStorage.getItem('scada_logged_user');
+            if (savedUser && userAccounts[savedUser]) {
+                loggedInUser = userAccounts[savedUser];
+                document.getElementById('loginModal').classList.add('hidden');
+                applyUserPermissions();
+            } else {
+                document.getElementById('loginModal').classList.remove('hidden');
+            }
         };
     </script>
 </body>
