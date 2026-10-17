@@ -3,28 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống SCADA Năng Lượng & Multi-Pack BMS - Cấu Hình Sạc/Xả Chuẩn Hãng</title>
-    <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=WUqoLZzgqdserMztxLduPaWjN9wZSEptwaOK2ojqNHK5GhGsMwnspV4fcyCfUG0y4t9Ttx0GRvK0K95AVKFiiKxr2O-T1z3wzCyTglLsn5H0d01u_gSxiodoH41FwhVvwvjb9OMqcWQutkEFSWhe_N3UVFAqVRxZHBlobT0ZaZe-ScYleTCOxfMULtk4q3-cF-edQKKq8McGrwvmbGxDfaMTlccCm-h3RI5dF9TKTRqKPcrvqmxJYP-E53l8JQZs6B6NWfg0N52Xqf3BK2UiKXz5_X9KGIBtqOjpczHoY51cClpZb7mT1nPJKeNdeDuj" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
+    <title>Hệ Thống SCADA Năng Lượng & Multi-Pack BMS - Chuẩn App Hãng</title>
+    <script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=dEVIHTMDB-nDQpdjhePSMsF2WutLgvTK_WxxiBLFi7eZ0CaIJ--pUzICn3WL-G3LU0UfHEOWPds2aeT_DflaaWIZvBMvWmtl0FGLR78k8NzRD1a1QaMKPP5Fa1IXaaK2lthv1u7szOTBUFa8kZTPc2V0WQB2KRNniIGLF8u1CDc40bMGkahyioe29JaJdJ_ZJ05hzJTlpCMZaD_-INLL_qc0bYvNFP1asI8MJRl8NnStufmFeIBT-E43ZDpEp0jzB6NjmVU92M27YkB65WOPq4sGmFMeMH0Uf3zGtpyMwATzQ9HmkEKZu0vHARNR3KMw" charset="UTF-8"></script><script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #080d1a;
+            background-color: #060b16;
         }
         .mono {
             font-family: 'JetBrains Mono', monospace;
         }
-        .hub-pulse {
+
+        /* SVG Energy Flow Animation */
+        @keyframes flowDashForward {
+            from { stroke-dashoffset: 24; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes flowDashReverse {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: 24; }
+        }
+
+        .flow-pv {
+            stroke: #f59e0b;
+            stroke-dasharray: 6, 6;
+            animation: flowDashForward 1s linear infinite;
+        }
+        .flow-grid-import {
+            stroke: #38bdf8;
+            stroke-dasharray: 6, 6;
+            animation: flowDashForward 1.2s linear infinite;
+        }
+        .flow-grid-export {
+            stroke: #22c55e;
+            stroke-dasharray: 6, 6;
+            animation: flowDashReverse 1.2s linear infinite;
+        }
+        .flow-bat-charge {
+            stroke: #10b981;
+            stroke-dasharray: 6, 6;
+            animation: flowDashForward 1s linear infinite;
+        }
+        .flow-bat-discharge {
+            stroke: #f43f5e;
+            stroke-dasharray: 6, 6;
+            animation: flowDashReverse 1s linear infinite;
+        }
+        .flow-load {
+            stroke: #06b6d4;
+            stroke-dasharray: 6, 6;
+            animation: flowDashForward 0.9s linear infinite;
+        }
+        .flow-eps {
+            stroke: #ec4899;
+            stroke-dasharray: 6, 6;
+            animation: flowDashForward 0.8s linear infinite;
+        }
+
+        /* Pin Battery Graphic */
+        .battery-body {
+            border: 2.5px solid #10b981;
+            border-radius: 8px;
+            position: relative;
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .battery-cap {
+            width: 10px;
+            height: 18px;
+            background: #10b981;
+            border-radius: 0 4px 4px 0;
+            position: absolute;
+            right: -12px;
+            top: calc(50% - 9px);
+        }
+
+        /* Glow effects */
+        .hub-glow-normal {
             box-shadow: 0 0 25px rgba(6, 182, 212, 0.35);
+        }
+        .hub-glow-eps {
+            box-shadow: 0 0 35px rgba(244, 63, 94, 0.45);
         }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen flex flex-col">
 
     <!-- Header điều hướng -->
-    <header class="bg-slate-900/90 border-b border-slate-800/80 sticky top-0 z-50 backdrop-blur-md">
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
@@ -32,10 +100,10 @@
                 </div>
                 <div>
                     <h1 class="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                        SCADA MULTI-INVERTER & BMS
-                        <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">REMOTE CONFIG PRO</span>
+                        SCADA HYBRID & MULTI-PACK BMS
+                        <span id="headerBrandBadge" class="text-[10px] px-2 py-0.5 rounded font-bold mono bg-amber-500/20 text-amber-300 border border-amber-500/30">LUXPOWER</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Giám Sát & Điều Khiển Cài Đặt Sạc/Xả (LuxPower • Deye • SolaX • Senergy)</p>
+                    <p class="text-xs text-slate-400">Giám Sát Hòa Lưới, Cấp Tải Khi Mất Lưới (EPS / UPS Backup) & Pin Lưu Trữ</p>
                 </div>
             </div>
 
@@ -44,10 +112,10 @@
                 <div class="flex items-center space-x-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800">
                     <i class="fa-solid fa-house-signal text-cyan-400 text-xs"></i>
                     <select id="stationSelector" onchange="changeStation(this.value)" class="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer mono">
-                        <option value="station_01" class="bg-slate-900">Trạm 01: LuxPower SNA 5000 (3x Pack 16S)</option>
-                        <option value="station_02" class="bg-slate-900">Trạm 02: Deye SUN-8K-SG04LP1 (4x Pack 16S)</option>
-                        <option value="station_03" class="bg-slate-900">Trạm 03: SolaX X1-Hybrid G4 (2x Pack 16S)</option>
-                        <option value="station_04" class="bg-slate-900">Trạm 04: Senergy SE-6KHB (2x Pack 16S)</option>
+                        <option value="station_01" class="bg-slate-900">Trạm 01: LuxPower SNA 5000 (3x Pack 16S - EPS ON)</option>
+                        <option value="station_02" class="bg-slate-900">Trạm 02: Deye SUN-8K Hybrid (4x Pack 16S - Hòa Lưới)</option>
+                        <option value="station_03" class="bg-slate-900">Trạm 03: SolaX X1-Hybrid G4 (2x Pack 16S - Backup Mất Lưới)</option>
+                        <option value="station_04" class="bg-slate-900">Trạm 04: Senergy SE-6KHB (2x Pack 16S - Tự Dùng)</option>
                     </select>
                 </div>
 
@@ -62,98 +130,163 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
 
-        <!-- 1. SƠ ĐỒ DÒNG NĂNG LƯỢNG TỔNG QUAN -->
-        <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-6">
-                <div class="flex items-center space-x-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
-                    <h2 class="text-sm font-bold tracking-wider text-slate-200 uppercase">Sơ Đồ Dòng Năng Lượng (Energy Flow)</h2>
+        <!-- Banner cảnh báo chế độ mất lưới EPS -->
+        <div id="gridStatusBanner" class="hidden bg-rose-950/60 border border-rose-500/60 rounded-2xl p-4 flex items-center justify-between shadow-xl shadow-rose-950/30">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500 flex items-center justify-center text-rose-400 text-xl animate-bounce">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <div class="flex items-center gap-3 text-xs mono text-slate-400">
-                    <span id="inverterWorkMode" class="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">Chế độ: Solar / Battery First</span>
-                    <span id="liveClock" class="hidden sm:inline">08:00:00</span>
+                <div>
+                    <h3 class="text-sm font-bold text-rose-200 uppercase tracking-wide flex items-center gap-2">
+                        CẢNH BÁO: MẤT ĐIỆN LƯỚI QUỐC GIA (OFF-GRID / BLACKOUT)
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-rose-500 text-white font-extrabold animate-pulse">EPS / UPS ACTIVE</span>
+                    </h3>
+                    <p class="text-xs text-rose-300/80">Biến tần đã tự động kích hoạt ngõ ra dự phòng EPS trong vòng &lt; 10ms, lấy điện từ Pin lưu trữ & Tấm pin PV để nuôi tải ưu tiên trong nhà.</p>
+                </div>
+            </div>
+            <button onclick="toggleGridSimulation()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700">
+                <i class="fa-solid fa-plug mr-1"></i> Giả lập Có điện lưới
+            </button>
+        </div>
+
+        <!-- 1. SƠ ĐỒ DÒNG NĂNG LƯỢNG CHUẨN APP HÃNG VỚI ĐỒ HỌA MỚI -->
+        <div class="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-4 mb-6 gap-3">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></span>
+                    <h2 class="text-sm font-bold tracking-wider text-slate-100 uppercase">SƠ ĐỒ LUỒNG NĂNG LƯỢNG THỜI GIAN THỰC (ENERGY FLOW TOPOLOGY)</h2>
+                </div>
+
+                <!-- Nút bấm giả lập bật/tắt mất lưới -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleGridSimulation()" id="btnSimulateGrid" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-tower-broadcast text-sky-400"></i> <span id="btnSimulateGridText">Cắt Điện Lưới (Thử EPS)</span>
+                    </button>
+                    <span id="inverterWorkModeTag" class="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-xs font-semibold mono">Chế độ: Solar / Battery First</span>
+                    <span id="liveClock" class="text-xs mono text-slate-400 font-medium">08:00:00</span>
                 </div>
             </div>
 
-            <!-- Lưới đồ họa luồng năng lượng -->
-            <div class="relative py-4 max-w-4xl mx-auto">
-                <div class="grid grid-cols-3 gap-6 items-center">
+            <!-- Khung đồ họa luồng năng lượng dạng SVG + Card chuẩn App Hãng -->
+            <div class="max-w-4xl mx-auto py-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
 
-                    <!-- Cột trái: Pin mặt trời (PV) -->
+                    <!-- CỘT 1: TẤM PIN MẶT TRỜI (PV SOLAR) -->
                     <div class="flex flex-col items-center">
-                        <div class="w-32 bg-slate-950 border border-amber-500/40 rounded-2xl p-4 flex flex-col items-center text-center shadow-lg shadow-amber-500/5">
-                            <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mb-2">
-                                <i class="fa-solid fa-sun animate-spin" style="animation-duration: 20s;"></i>
+                        <div class="w-40 bg-slate-950 border border-amber-500/40 rounded-2xl p-4 flex flex-col items-center text-center shadow-lg shadow-amber-500/5 group hover:border-amber-400 transition relative">
+                            <!-- Đồ họa Tấm Pin Chuyên Nghiệp -->
+                            <div class="w-16 h-12 bg-gradient-to-br from-blue-900 to-slate-900 border-2 border-amber-400/80 rounded-lg grid grid-cols-3 grid-rows-2 gap-0.5 p-1 shadow-inner shadow-amber-400/20 mb-2">
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
+                                <div class="border border-cyan-400/40 bg-blue-950/70 rounded-[1px]"></div>
                             </div>
-                            <span class="text-xs font-semibold text-slate-300">TẤM PIN (PV)</span>
-                            <div class="text-xl font-bold text-amber-400 mono mt-1" id="flowPvPower">3.85 <span class="text-xs text-slate-400">kW</span></div>
-                            <div class="text-[11px] text-slate-400 mono mt-0.5" id="flowPvDetail">PV1: 182V | PV2: 188V</div>
+                            <span class="text-xs font-bold text-slate-200">TẤM PIN (PV SOLAR)</span>
+                            <div class="text-2xl font-black text-amber-400 mono mt-1" id="flowPvPower">3.85 <span class="text-xs text-slate-400">kW</span></div>
+                            <div class="text-[11px] text-slate-400 mono mt-1" id="flowPvDetail">PV1: 182V | PV2: 188V</div>
+                            <span class="text-[10px] text-amber-400 font-semibold mt-0.5"><i class="fa-solid fa-sun animate-spin mr-1" style="animation-duration: 15s;"></i>Đang phát điện</span>
                         </div>
                     </div>
 
-                    <!-- Cột giữa: Biến tần -->
+                    <!-- CỘT 2: BIẾN TẦN TRUNG TÂM (CHỌN HÃNG LUXPOWER / DEYE / SOLAX / SENERGY) -->
                     <div class="flex flex-col items-center">
-                        <div class="w-44 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500 rounded-3xl p-5 flex flex-col items-center text-center hub-pulse z-10">
-                            <div class="w-14 h-14 rounded-2xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-2xl mb-2">
-                                <i class="fa-solid fa-microchip"></i>
+                        <div id="invCenterCard" class="w-48 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500 rounded-3xl p-5 flex flex-col items-center text-center hub-glow-normal z-10 relative">
+                            <!-- Logo Hãng Biến Tần Động -->
+                            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-600/30 to-blue-600/20 border border-cyan-400/50 flex flex-col items-center justify-center mb-2 p-1">
+                                <i class="fa-solid fa-bolt-lightning text-2xl text-cyan-300"></i>
+                                <span id="brandLogoText" class="text-[9px] font-black tracking-tighter text-cyan-200 uppercase mt-0.5">LUXPOWER</span>
                             </div>
-                            <span class="text-xs font-bold text-white tracking-wide">BIẾN TẦN TRUNG TÂM</span>
-                            <span class="text-xs text-cyan-400 font-bold mono mt-0.5" id="invModelName">LuxPower SNA 5000</span>
-                            <div class="mt-2 pt-2 border-t border-slate-800 w-full flex justify-around text-[10px] text-slate-300">
-                                <div>Nhiệt: <span class="text-amber-400 mono" id="flowInvTemp">42°C</span></div>
-                                <div>Hiệu suất: <span class="text-emerald-400 mono">97.1%</span></div>
+
+                            <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">BIẾN TẦN HYBRID</span>
+                            <span class="text-xs text-cyan-400 font-extrabold mono mt-0.5" id="invModelName">LuxPower SNA 5000</span>
+                            
+                            <!-- Trạng thái hòa lưới / Chạy mất lưới -->
+                            <div id="invStateBadge" class="mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                HÒA LƯỚI & SẠC
+                            </div>
+
+                            <div class="mt-2.5 pt-2 border-t border-slate-800 w-full flex justify-around text-[10px] text-slate-300">
+                                <div>Nhiệt: <span class="text-amber-400 mono font-bold" id="flowInvTemp">42°C</span></div>
+                                <div>Hiệu suất: <span class="text-emerald-400 mono font-bold">97.2%</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Cột phải: Lưới điện & Tải -->
-                    <div class="flex flex-col gap-4 items-center">
-                        <div class="w-32 bg-slate-950 border border-sky-500/40 rounded-2xl p-3 flex flex-col items-center text-center">
+                    <!-- CỘT 3: LƯỚI ĐIỆN, TẢI THƯỜNG & TẢI KHI MẤT LƯỚI (EPS / BACKUP LOAD) -->
+                    <div class="flex flex-col gap-3.5 items-center w-full">
+
+                        <!-- Khối Lưới Điện (Grid) -->
+                        <div id="gridCard" class="w-44 bg-slate-950 border border-sky-500/40 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg transition">
                             <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xl mb-1">
                                 <i class="fa-solid fa-tower-broadcast"></i>
                             </div>
-                            <span class="text-[11px] font-semibold text-slate-300">LƯỚI ĐIỆN (GRID)</span>
-                            <div class="text-lg font-bold text-sky-400 mono" id="flowGridPower">0.20 <span class="text-xs text-slate-400">kW</span></div>
-                            <span class="text-[10px] text-slate-400 mono" id="flowGridStatus">Nhập lưới (Import)</span>
+                            <span class="text-[11px] font-bold text-slate-300">LƯỚI ĐIỆN (GRID)</span>
+                            <div class="text-lg font-black text-sky-400 mono" id="flowGridPower">0.20 <span class="text-xs text-slate-400">kW</span></div>
+                            <span class="text-[10px] mono" id="flowGridStatus">228V / 50Hz (Có lưới)</span>
                         </div>
 
-                        <div class="w-32 bg-slate-950 border border-cyan-500/40 rounded-2xl p-3 flex flex-col items-center text-center">
+                        <!-- Khối Tải Thường (Normal Home Load) -->
+                        <div id="normalLoadCard" class="w-44 bg-slate-950 border border-cyan-500/40 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg transition">
                             <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl mb-1">
                                 <i class="fa-solid fa-house-laptop"></i>
                             </div>
-                            <span class="text-[11px] font-semibold text-slate-300">TẢI TIÊU THỤ</span>
-                            <div class="text-lg font-bold text-cyan-400 mono" id="flowLoadPower">1.80 <span class="text-xs text-slate-400">kW</span></div>
-                            <span class="text-[10px] text-emerald-400 mono">228V / 50Hz</span>
+                            <span class="text-[11px] font-bold text-slate-300">TẢI GIA ĐÌNH (LOAD)</span>
+                            <div class="text-lg font-black text-cyan-400 mono" id="flowLoadPower">1.80 <span class="text-xs text-slate-400">kW</span></div>
+                            <span class="text-[10px] text-slate-400 mono">Cấp tải hòa lưới</span>
+                        </div>
+
+                        <!-- Khối TẢI DỰ PHÒNG KHI MẤT LƯỚI (EPS / UPS BACKUP LOAD) -->
+                        <div id="epsLoadCard" class="w-44 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg transition opacity-60">
+                            <div class="w-10 h-10 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center text-xl mb-1">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-slate-300">TẢI DỰ PHÒNG (EPS)</span>
+                            <div class="text-lg font-black text-pink-400 mono" id="flowEpsPower">0.00 <span class="text-xs text-slate-400">kW</span></div>
+                            <span class="text-[10px] text-slate-400 mono" id="flowEpsStatus">Chờ mất lưới (Standby)</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- HÀNG DƯỚI CÙNG: QUẢ PIN LƯU TRỮ CHUYÊN NGHIỆP (BATTERY PACK) -->
+                <div class="flex flex-col items-center mt-7">
+                    <div class="w-full max-w-lg bg-slate-950 border-2 border-emerald-500/40 rounded-3xl p-5 shadow-2xl relative">
+                        <div class="flex flex-wrap items-center justify-between gap-4">
+                            
+                            <!-- Đồ Họa Quả Pin Chân Thực -->
+                            <div class="flex items-center space-x-4">
+                                <div class="w-24 h-12 battery-body p-1 flex items-center">
+                                    <div id="batteryGraphicLevel" class="h-full bg-gradient-to-r from-emerald-600 to-teal-400 rounded transition-all duration-500" style="width: 85%;"></div>
+                                    <div class="battery-cap"></div>
+                                </div>
+
+                                <div>
+                                    <span class="text-xs font-extrabold text-white flex items-center gap-1.5">
+                                        PIN LƯU TRỮ LITHIUM LIFEPO4
+                                        <span id="packCountBadge" class="px-1.5 py-0.2 text-[10px] rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">3 Packs 16S</span>
+                                    </span>
+                                    <div class="text-xs text-slate-400 mono mt-0.5" id="flowBatVoltCurr">52.8V | +35.2A</div>
+                                    <div class="text-[11px] text-emerald-400 font-semibold" id="flowBatStatus"><i class="fa-solid fa-bolt mr-1"></i>Đang Nạp Tự Động (1.86 kW)</div>
+                                </div>
+                            </div>
+
+                            <!-- Chỉ số SoC và Dung Lượng -->
+                            <div class="text-right">
+                                <div class="text-3xl font-black text-emerald-400 mono" id="flowBatSoc">85%</div>
+                                <div class="text-xs text-slate-400 mono mt-0.5" id="flowTotalCap">300 Ah / 15.3 kWh</div>
+                                <div class="text-[10px] text-cyan-400 font-semibold mono" id="flowBatTimeRemaining">Thời gian dùng còn lại: ~6.5 giờ</div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
 
-                <!-- Cụm Tổng Hợp Pin -->
-                <div class="flex flex-col items-center mt-6">
-                    <div class="w-80 bg-slate-950 border border-emerald-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-emerald-500/5">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl">
-                                <i class="fa-solid fa-layer-group"></i>
-                            </div>
-                            <div>
-                                <span class="text-xs font-bold text-white flex items-center gap-1.5">
-                                    TỔNG CỤM PIN
-                                    <span id="packCountBadge" class="px-1.5 py-0.2 text-[10px] rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">3 Packs</span>
-                                </span>
-                                <div class="text-xs text-slate-400 mono" id="flowBatVoltCurr">52.8V | +35.2A</div>
-                                <div class="text-[11px] text-emerald-400 font-semibold" id="flowBatStatus">Tổng nạp: 1.86 kW</div>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-black text-emerald-400 mono" id="flowBatSoc">84%</div>
-                            <div class="text-xs text-slate-400 mono" id="flowTotalCap">300 Ah / 15.3 kWh</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- 2. BẢNG CÀI ĐẶT THÔNG SỐ SẠC / XẢ CHUẨN APP HÃNG (BRAND APP SETTINGS) -->
+        <!-- 2. BẢNG CÀI ĐẶT THÔNG SỐ SẠC / XẢ CHUẨN HÃNG (BRAND APP SETTINGS) -->
         <div class="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-5 shadow-2xl space-y-6">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
@@ -162,10 +295,10 @@
                     </div>
                     <div>
                         <h2 class="font-bold text-white text-base flex items-center gap-2">
-                            CÀI ĐẶT SẠC / XẢ TỪ XA CHUẨN HÃNG
+                            CÀI ĐẶT SẠC / XẢ & CHẾ ĐỘ MẤT LƯỚI (EPS CONFIG)
                             <span class="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 mono" id="brandTagTitle">LUXPOWER CONFIG</span>
                         </h2>
-                        <p class="text-xs text-slate-400">Tương thích các giao thức tham số của LuxPower, Deye, SolaX, Senergy</p>
+                        <p class="text-xs text-slate-400">Thiết lập ngưỡng ngắt bảo vệ pin, sạc lưới ban đêm và chạy độc lập mất lưới</p>
                     </div>
                 </div>
 
@@ -179,7 +312,7 @@
                 </div>
             </div>
 
-            <!-- Form Cài Đặt Chi Tiết Chia Theo 3 Khối -->
+            <!-- Form Cài Đặt 3 Khối -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
                 <!-- Khối 1: Cấu hình Pin & Dòng Sạc/Xả -->
@@ -192,9 +325,9 @@
                         <div>
                             <label class="block text-slate-400 mb-1">Loại Bình Lưu Trữ (Battery Type)</label>
                             <select id="cfgBatType" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-200 mono focus:border-cyan-500 focus:outline-none">
-                                <option value="Lithium_CAN">Lithium (Giao tiếp CAN / RS485 BMS)</option>
-                                <option value="Lead_Acid">Lead-Acid / AGM (Cài theo Điện áp Volt)</option>
-                                <option value="Custom_LiFePO4">Custom Lithium (Theo % SoC thủ công)</option>
+                                <option value="Lithium_CAN">Lithium (CANbus BMS Auto)</option>
+                                <option value="Lead_Acid">Lead-Acid / AGM (Theo Volt)</option>
+                                <option value="Custom_LiFePO4">Custom LiFePO4 (% SoC thủ công)</option>
                             </select>
                         </div>
 
@@ -215,56 +348,63 @@
                         </div>
 
                         <div>
-                            <label class="block text-slate-400 mb-1">Điện Áp Sạc Đầy (Absorbtion / Bulk Volt)</label>
+                            <label class="block text-slate-400 mb-1">Điện Áp Sạc Đầy (Bulk / Absorption Volt)</label>
                             <input id="cfgBulkVolt" type="number" step="0.1" value="56.8" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 mono">
                         </div>
                     </div>
                 </div>
 
-                <!-- Khối 2: Ngưỡng Ngắt Bảo Vệ Pin (Cut-off SoC & Voltage) -->
+                <!-- Khối 2: Cài Đặt Khi Mất Lưới (EPS / UPS Cut-Off) -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-4">
-                    <div class="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider border-b border-slate-800 pb-2">
-                        <i class="fa-solid fa-shield-halved"></i> 2. Ngưỡng Bảo Vệ Sạc/Xả (Cut-Off)
+                    <div class="flex items-center gap-2 text-xs font-bold text-pink-400 uppercase tracking-wider border-b border-slate-800 pb-2">
+                        <i class="fa-solid fa-shield-halved"></i> 2. Chế Độ Mất Lưới & Ngưỡng Ngắt (EPS)
                     </div>
 
                     <div class="space-y-3 text-xs">
+                        <div class="p-2.5 bg-slate-900/80 rounded-xl border border-pink-500/30 flex items-center justify-between">
+                            <div>
+                                <span class="font-bold text-white block">Kích Hoạt Ngõ Ra EPS (Backup)</span>
+                                <span class="text-[10px] text-slate-400">Tự phát điện nuôi tải khi mất lưới</span>
+                            </div>
+                            <input id="cfgEpsEnable" type="checkbox" checked class="accent-pink-500 w-4 h-4 cursor-pointer">
+                        </div>
+
                         <div>
                             <div class="flex justify-between text-slate-400 mb-1">
                                 <span>Ngắt Xả Có Lưới (On-Grid Cut-off SoC)</span>
                                 <span class="mono text-cyan-400 font-bold" id="valOnGridSoc">20 %</span>
                             </div>
                             <input id="cfgOnGridSoc" type="range" min="10" max="50" step="1" value="20" oninput="document.getElementById('valOnGridSoc').innerText = this.value + ' %'" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
-                            <span class="text-[10px] text-slate-500">Dưới ngưỡng này biến tần chuyển sang dùng điện lưới</span>
+                            <span class="text-[10px] text-slate-500">Dưới mức này ngưng xả, giữ pin phòng lúc mất điện</span>
                         </div>
 
                         <div>
                             <div class="flex justify-between text-slate-400 mb-1">
-                                <span>Ngắt Xả Mất Lưới (Off-Grid Cut-off SoC)</span>
+                                <span>Ngắt Xả Mất Lưới (Off-Grid EPS Cut-off)</span>
                                 <span class="mono text-rose-400 font-bold" id="valOffGridSoc">10 %</span>
                             </div>
                             <input id="cfgOffGridSoc" type="range" min="5" max="30" step="1" value="10" oninput="document.getElementById('valOffGridSoc').innerText = this.value + ' %'" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500">
-                            <span class="text-[10px] text-slate-500">Ngắt toàn bộ nguồn tải dự phòng để bảo vệ pin không kiệt</span>
+                            <span class="text-[10px] text-slate-500">Ngắt toàn bộ EPS khi pin còn 10% để chống hỏng cell</span>
                         </div>
 
                         <div>
-                            <label class="block text-slate-400 mb-1">Ngưỡng Bật Sạc Lại Từ Lưới (AC Charge Start SoC)</label>
-                            <div class="flex items-center gap-2">
-                                <input id="cfgAcChargeSoc" type="number" value="15" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 mono">
-                                <span class="text-slate-400 mono">%</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-slate-400 mb-1">Dòng Sạc Bằng Điện Lưới (AC Charge Current)</label>
-                            <div class="flex items-center gap-2">
-                                <input id="cfgAcChgCurr" type="number" value="30" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 mono">
-                                <span class="text-slate-400 mono">A</span>
+                            <label class="block text-slate-400 mb-1">Tần Số & Điện Áp Ngõ Ra EPS</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="cfgEpsVolt" class="bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 mono">
+                                    <option value="220">220 VAC</option>
+                                    <option value="230" selected>230 VAC</option>
+                                    <option value="240">240 VAC</option>
+                                </select>
+                                <select id="cfgEpsFreq" class="bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 mono">
+                                    <option value="50" selected>50 Hz</option>
+                                    <option value="60">60 Hz</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Khối 3: Chế Độ Ưu Tiên & Cài Đặt Theo Khung Giờ (Time of Use - TOU) -->
+                <!-- Khối 3: Chế Độ Ưu Tiên & Cài Đặt Theo Khung Giờ (TOU) -->
                 <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-4">
                     <div class="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider border-b border-slate-800 pb-2">
                         <i class="fa-solid fa-clock"></i> 3. Chế Độ Vận Hành & Khung Giờ (TOU)
@@ -272,11 +412,11 @@
 
                     <div class="space-y-3 text-xs">
                         <div>
-                            <label class="block text-slate-400 mb-1">Chế Độ Ưu Tiên Nguồn (Priority Mode)</label>
+                            <label class="block text-slate-400 mb-1">Chế Độ Ưu Tiên Nguồn (Work Mode)</label>
                             <select id="cfgWorkMode" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-slate-200 mono focus:border-cyan-500 focus:outline-none">
                                 <option value="Solar_Bat_Grid">Solar First -> Battery -> Grid (Tự dùng tối đa)</option>
                                 <option value="Solar_Grid_Bat">Solar First -> Grid -> Battery (Dự phòng mất điện)</option>
-                                <option value="Peak_Shaving">Peak Shaving (Xả giờ cao điểm, nạp giờ thấp điểm)</option>
+                                <option value="Peak_Shaving">Peak Shaving (Xả cao điểm, nạp thấp điểm)</option>
                                 <option value="Feed_In_Priority">Feed-in Priority (Bán điện lưới ưu tiên)</option>
                             </select>
                         </div>
@@ -296,11 +436,10 @@
                                     <input id="cfgTouEnd" type="time" value="05:30" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-slate-200 mono">
                                 </div>
                             </div>
-                            <span class="text-[10px] text-emerald-400 block">Tự nạp pin vào giờ thấp điểm ban đêm giá rẻ</span>
                         </div>
 
                         <div class="flex items-center justify-between pt-1">
-                            <span class="text-slate-400">Cho Phép Xuất Lưới (Grid Feed-in):</span>
+                            <span class="text-slate-400">Cho Phép Bán Lưới (Grid Feed-in):</span>
                             <input id="cfgZeroExport" type="checkbox" class="accent-cyan-500 w-4 h-4 cursor-pointer">
                         </div>
                     </div>
@@ -309,16 +448,14 @@
             </div>
         </div>
 
-        <!-- 3. KHU VỰC THEO DÕI NHIỀU PACK PIN BMS (MULTI-PACK BMS SYSTEM) -->
+        <!-- 3. KHU VỰC THEO DÕI NHIỀU PACK PIN BMS -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-5">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
                     <h2 class="font-bold text-white text-base">HỆ THỐNG GIÁM SÁT CỤM PACK PIN BMS (PARALLEL PACKS)</h2>
                 </div>
-                <div class="flex items-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800" id="packTabButtons">
-                    <!-- Sinh tự động qua JS -->
-                </div>
+                <div class="flex items-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800" id="packTabButtons"></div>
             </div>
 
             <!-- Tổng quan các Pack song song -->
@@ -369,27 +506,29 @@
 
     </main>
 
-    <!-- Script quản lý Cài đặt Sạc/Xả & Dữ liệu các hãng -->
+    <!-- Script điều khiển và mô phỏng -->
     <script>
         const stationsDatabase = {
             "station_01": {
                 name: "Trạm 01: LuxPower SNA 5000",
-                brand: "LUXPOWER SNA/LXP",
-                invModel: "LuxPower SNA 5000",
-                mode: "Solar / Battery First",
-                pv: { power: 3.85, v1: 182, v2: 188 },
-                grid: { power: 0.20, status: "Nhập Lưới (Import)" },
-                load: { power: 1.80 },
-                inv: { temp: 42 },
+                brand: "LUXPOWER",
+                invModel: "LuxPower SNA 5000 Eco Hybrid",
+                isGridLost: true, // Đang mất lưới để thể hiện chức năng EPS
+                pv: { power: 2.45, v1: 175, v2: 180 },
+                grid: { power: 0.00, status: "MẤT ĐIỆN LƯỚI (0V / 0Hz)" },
+                load: { power: 0.00 }, // Tải thường bị ngắt
+                eps: { power: 2.15, status: "CẤP TẢI EPS LIÊN TỤC (230V/50Hz)" },
+                inv: { temp: 44 },
                 config: {
                     batType: "Lithium_CAN",
                     maxChgCurr: 80,
                     maxDsgCurr: 100,
                     bulkVolt: 56.8,
+                    epsEnable: true,
                     onGridSoc: 20,
                     offGridSoc: 10,
-                    acChgSoc: 15,
-                    acChgCurr: 30,
+                    epsVolt: "230",
+                    epsFreq: "50",
                     workMode: "Solar_Bat_Grid",
                     touEnable: true,
                     touStart: "00:00",
@@ -397,29 +536,31 @@
                     zeroExport: false
                 },
                 packs: [
-                    { id: "pack_01", name: "Pack 01 (Master)", soc: 85, volt: 52.8, curr: "+12.1 A", delta: 12, mosTemp: 35, t1: 30.5, t2: 31.0, cycles: 124, soh: 99.5, cells: [3.305, 3.302, 3.310, 3.308, 3.299, 3.312, 3.301, 3.307, 3.304, 3.300, 3.309, 3.298, 3.311, 3.306, 3.303, 3.305] },
-                    { id: "pack_02", name: "Pack 02 (Slave 1)", soc: 84, volt: 52.7, curr: "+11.8 A", delta: 15, mosTemp: 36, t1: 31.0, t2: 31.4, cycles: 122, soh: 99.1, cells: [3.300, 3.304, 3.308, 3.306, 3.302, 3.309, 3.301, 3.305, 3.302, 3.295, 3.308, 3.300, 3.310, 3.304, 3.302, 3.303] },
-                    { id: "pack_03", name: "Pack 03 (Slave 2)", soc: 83, volt: 52.7, curr: "+11.3 A", delta: 18, mosTemp: 37, t1: 31.2, t2: 31.8, cycles: 118, soh: 98.8, cells: [3.298, 3.301, 3.305, 3.304, 3.296, 3.307, 3.299, 3.302, 3.300, 3.294, 3.305, 3.297, 3.308, 3.301, 3.299, 3.300] }
+                    { id: "pack_01", name: "Pack 01 (Master)", soc: 72, volt: 51.8, curr: "-22.5 A", delta: 14, mosTemp: 37, t1: 31.0, t2: 31.5, cycles: 125, soh: 99.4, cells: [3.245, 3.242, 3.250, 3.248, 3.239, 3.252, 3.241, 3.247, 3.244, 3.240, 3.249, 3.238, 3.251, 3.246, 3.243, 3.245] },
+                    { id: "pack_02", name: "Pack 02 (Slave 1)", soc: 71, volt: 51.7, curr: "-21.8 A", delta: 16, mosTemp: 38, t1: 31.5, t2: 32.0, cycles: 123, soh: 99.0, cells: [3.240, 3.244, 3.248, 3.246, 3.242, 3.249, 3.241, 3.245, 3.242, 3.235, 3.248, 3.240, 3.250, 3.244, 3.242, 3.243] },
+                    { id: "pack_03", name: "Pack 03 (Slave 2)", soc: 70, volt: 51.7, curr: "-20.9 A", delta: 18, mosTemp: 39, t1: 32.0, t2: 32.4, cycles: 119, soh: 98.7, cells: [3.238, 3.241, 3.245, 3.244, 3.236, 3.247, 3.239, 3.242, 3.240, 3.234, 3.245, 3.237, 3.248, 3.241, 3.239, 3.240] }
                 ]
             },
             "station_02": {
-                name: "Trạm 02: Deye SUN-8K-SG04LP1",
-                brand: "DEYE HYBRID",
-                invModel: "Deye SUN-8K-SG04LP1",
-                mode: "Time of Use / Peak Shaving",
+                name: "Trạm 02: Deye SUN-8K Hybrid",
+                brand: "DEYE",
+                invModel: "Deye SUN-8K-SG04LP1-EU",
+                isGridLost: false,
                 pv: { power: 6.50, v1: 340, v2: 345 },
-                grid: { power: 0.80, status: "Xuất Lưới (Export)" },
+                grid: { power: 1.20, status: "229V / 50Hz (Hòa Lưới Xuất)" },
                 load: { power: 3.20 },
+                eps: { power: 0.00, status: "Standby (Có lưới)" },
                 inv: { temp: 46 },
                 config: {
                     batType: "Lithium_CAN",
                     maxChgCurr: 120,
                     maxDsgCurr: 130,
                     bulkVolt: 57.2,
+                    epsEnable: true,
                     onGridSoc: 25,
                     offGridSoc: 15,
-                    acChgSoc: 20,
-                    acChgCurr: 40,
+                    epsVolt: "230",
+                    epsFreq: "50",
                     workMode: "Peak_Shaving",
                     touEnable: true,
                     touStart: "22:00",
@@ -427,28 +568,30 @@
                     zeroExport: true
                 },
                 packs: [
-                    { id: "pack_01", name: "Pack 01 (Master)", soc: 68, volt: 52.1, curr: "+15.5 A", delta: 14, mosTemp: 38, t1: 32.5, t2: 33.0, cycles: 210, soh: 98.2, cells: [3.255, 3.252, 3.260, 3.258, 3.249, 3.262, 3.251, 3.257, 3.254, 3.250, 3.259, 3.248, 3.261, 3.256, 3.253, 3.255] },
-                    { id: "pack_02", name: "Pack 02 (Slave 1)", soc: 67, volt: 52.0, curr: "+14.8 A", delta: 16, mosTemp: 39, t1: 33.0, t2: 33.5, cycles: 208, soh: 98.0, cells: [3.250, 3.254, 3.258, 3.256, 3.252, 3.259, 3.251, 3.255, 3.252, 3.245, 3.258, 3.250, 3.260, 3.254, 3.252, 3.253] }
+                    { id: "pack_01", name: "Pack 01 (Master)", soc: 86, volt: 52.9, curr: "+18.5 A", delta: 12, mosTemp: 35, t1: 30.5, t2: 31.0, cycles: 210, soh: 98.2, cells: [3.305, 3.302, 3.310, 3.308, 3.299, 3.312, 3.301, 3.307, 3.304, 3.300, 3.309, 3.298, 3.311, 3.306, 3.303, 3.305] },
+                    { id: "pack_02", name: "Pack 02 (Slave 1)", soc: 85, volt: 52.8, curr: "+17.8 A", delta: 14, mosTemp: 36, t1: 31.0, t2: 31.5, cycles: 208, soh: 98.0, cells: [3.300, 3.304, 3.308, 3.306, 3.302, 3.309, 3.301, 3.305, 3.302, 3.295, 3.308, 3.300, 3.310, 3.304, 3.302, 3.303] }
                 ]
             },
             "station_03": {
                 name: "Trạm 03: SolaX X1-Hybrid G4",
-                brand: "SOLAX POWER",
-                invModel: "SolaX X1-Hybrid G4",
-                mode: "Self-Use Mode",
-                pv: { power: 2.10, v1: 220, v2: 225 },
-                grid: { power: 0.15, status: "Nhập Lưới (Import)" },
-                load: { power: 1.40 },
+                brand: "SOLAX",
+                invModel: "SolaX X1-Hybrid G4 6.0kW",
+                isGridLost: true,
+                pv: { power: 1.20, v1: 210, v2: 215 },
+                grid: { power: 0.00, status: "MẤT ĐIỆN LƯỚI (0V / 0Hz)" },
+                load: { power: 0.00 },
+                eps: { power: 1.45, status: "CẤP TẢI EPS LIÊN TỤC (230V/50Hz)" },
                 inv: { temp: 40 },
                 config: {
                     batType: "Lithium_CAN",
                     maxChgCurr: 50,
                     maxDsgCurr: 60,
                     bulkVolt: 56.4,
+                    epsEnable: true,
                     onGridSoc: 15,
                     offGridSoc: 10,
-                    acChgSoc: 15,
-                    acChgCurr: 25,
+                    epsVolt: "230",
+                    epsFreq: "50",
                     workMode: "Solar_Bat_Grid",
                     touEnable: false,
                     touStart: "01:00",
@@ -456,27 +599,29 @@
                     zeroExport: false
                 },
                 packs: [
-                    { id: "pack_01", name: "Pack 01 (Master)", soc: 92, volt: 53.2, curr: "+6.5 A", delta: 10, mosTemp: 33, t1: 29.5, t2: 30.0, cycles: 85, soh: 99.4, cells: [3.335, 3.332, 3.340, 3.338, 3.329, 3.342, 3.331, 3.337, 3.334, 3.330, 3.339, 3.328, 3.341, 3.336, 3.333, 3.335] }
+                    { id: "pack_01", name: "Pack 01 (Master)", soc: 82, volt: 52.6, curr: "-14.2 A", delta: 10, mosTemp: 34, t1: 29.5, t2: 30.0, cycles: 86, soh: 99.4, cells: [3.295, 3.292, 3.300, 3.298, 3.289, 3.302, 3.291, 3.297, 3.294, 3.290, 3.299, 3.288, 3.301, 3.296, 3.293, 3.295] }
                 ]
             },
             "station_04": {
                 name: "Trạm 04: Senergy SE-6KHB",
-                brand: "SENERGY HYBRID",
-                invModel: "Senergy SE-6KHB",
-                mode: "General / Back-up Mode",
+                brand: "SENERGY",
+                invModel: "Senergy SE-6KHB Hybrid Inverter",
+                isGridLost: false,
                 pv: { power: 4.20, v1: 280, v2: 285 },
-                grid: { power: 0.00, status: "Standby" },
+                grid: { power: 0.40, status: "228V / 50Hz (Nhập lưới)" },
                 load: { power: 2.30 },
+                eps: { power: 0.00, status: "Standby (Có lưới)" },
                 inv: { temp: 43 },
                 config: {
                     batType: "Lithium_CAN",
                     maxChgCurr: 70,
                     maxDsgCurr: 90,
                     bulkVolt: 56.8,
+                    epsEnable: true,
                     onGridSoc: 20,
                     offGridSoc: 12,
-                    acChgSoc: 18,
-                    acChgCurr: 30,
+                    epsVolt: "230",
+                    epsFreq: "50",
                     workMode: "Solar_Bat_Grid",
                     touEnable: true,
                     touStart: "00:00",
@@ -497,37 +642,112 @@
             activePackIndex = 0;
             const data = stationsDatabase[id];
 
-            // Render Topology
-            document.getElementById('invModelName').innerText = data.invModel;
+            // Cập nhật thương hiệu và model
+            document.getElementById('headerBrandBadge').innerText = data.brand;
+            document.getElementById('brandLogoText').innerText = data.brand;
             document.getElementById('brandTagTitle').innerText = data.brand + " CONFIG";
-            document.getElementById('inverterWorkMode').innerText = "Chế độ: " + data.mode;
-            document.getElementById('flowPvPower').innerHTML = `${data.pv.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
-            document.getElementById('flowPvDetail').innerText = `PV1: ${data.pv.v1}V | PV2: ${data.pv.v2}V`;
-            document.getElementById('flowGridPower').innerHTML = `${data.grid.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
-            document.getElementById('flowGridStatus').innerText = data.grid.status;
-            document.getElementById('flowLoadPower').innerHTML = `${data.load.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
-            document.getElementById('flowInvTemp').innerText = data.inv.temp + '°C';
+            document.getElementById('invModelName').innerText = data.invModel;
 
-            // Cụm pin
-            const packCount = data.packs.length;
-            const avgSoc = Math.round(data.packs.reduce((acc, p) => acc + p.soc, 0) / packCount);
-            const totalCurr = data.packs.reduce((acc, p) => acc + parseFloat(p.curr), 0).toFixed(1);
-            const avgVolt = (data.packs.reduce((acc, p) => acc + p.volt, 0) / packCount).toFixed(1);
-            const totalKw = ((avgVolt * totalCurr) / 1000).toFixed(2);
+            // Render Topology
+            renderEnergyFlow(data);
 
-            document.getElementById('packCountBadge').innerText = `${packCount} Packs`;
-            document.getElementById('flowBatSoc').innerText = `${avgSoc}%`;
-            document.getElementById('flowBatVoltCurr').innerText = `${avgVolt}V | ${totalCurr >= 0 ? '+' : ''}${totalCurr}A`;
-            document.getElementById('flowBatStatus').innerText = totalCurr >= 0 ? `Tổng nạp: ${totalKw} kW` : `Tổng xả: ${Math.abs(totalKw)} kW`;
-            document.getElementById('flowTotalCap').innerText = `${packCount * 100} Ah / ${(packCount * 5.12).toFixed(1)} kWh`;
-
-            // Load Cấu hình Sạc Xả của trạm này
+            // Cấu hình sạc/xả
             loadStationConfig(data.config);
 
             // Render Packs
             renderPackTabs(data.packs);
             renderParallelCards(data.packs);
             selectPack(0);
+        }
+
+        function renderEnergyFlow(data) {
+            const isOffGrid = data.isGridLost;
+            const banner = document.getElementById('gridStatusBanner');
+            const invCenterCard = document.getElementById('invCenterCard');
+            const invStateBadge = document.getElementById('invStateBadge');
+            const btnSim = document.getElementById('btnSimulateGridText');
+            const gridCard = document.getElementById('gridCard');
+            const normalLoadCard = document.getElementById('normalLoadCard');
+            const epsLoadCard = document.getElementById('epsLoadCard');
+
+            // Cập nhật trạng thái lưới
+            if (isOffGrid) {
+                banner.classList.remove('hidden');
+                invCenterCard.className = "w-48 bg-gradient-to-b from-slate-900 to-rose-950/40 border-2 border-rose-500 rounded-3xl p-5 flex flex-col items-center text-center hub-glow-eps z-10 relative";
+                invStateBadge.className = "mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse";
+                invStateBadge.innerText = "CHẠY MẤT LƯỚI (EPS)";
+                btnSim.innerText = "Khôi Phục Điện Lưới";
+
+                gridCard.className = "w-44 bg-slate-950 border border-rose-900/60 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg opacity-40";
+                normalLoadCard.className = "w-44 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg opacity-40";
+                epsLoadCard.className = "w-44 bg-slate-950 border-2 border-pink-500 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg shadow-pink-500/20 opacity-100";
+            } else {
+                banner.classList.add('hidden');
+                invCenterCard.className = "w-48 bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-cyan-500 rounded-3xl p-5 flex flex-col items-center text-center hub-glow-normal z-10 relative";
+                invStateBadge.className = "mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                invStateBadge.innerText = "HÒA LƯỚI & SẠC";
+                btnSim.innerText = "Cắt Điện Lưới (Thử EPS)";
+
+                gridCard.className = "w-44 bg-slate-950 border border-sky-500/40 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg opacity-100";
+                normalLoadCard.className = "w-44 bg-slate-950 border border-cyan-500/40 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg opacity-100";
+                epsLoadCard.className = "w-44 bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center text-center shadow-lg opacity-50";
+            }
+
+            // Số liệu
+            document.getElementById('flowPvPower').innerHTML = `${data.pv.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
+            document.getElementById('flowPvDetail').innerText = `PV1: ${data.pv.v1}V | PV2: ${data.pv.v2}V`;
+            document.getElementById('flowGridPower').innerHTML = `${data.grid.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
+            document.getElementById('flowGridStatus').innerText = data.grid.status;
+            document.getElementById('flowLoadPower').innerHTML = `${data.load.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
+            document.getElementById('flowEpsPower').innerHTML = `${data.eps.power.toFixed(2)} <span class="text-xs text-slate-400">kW</span>`;
+            document.getElementById('flowEpsStatus').innerText = data.eps.status;
+            document.getElementById('flowInvTemp').innerText = data.inv.temp + '°C';
+
+            // Tính toán quả Pin tổng
+            const packCount = data.packs.length;
+            const avgSoc = Math.round(data.packs.reduce((acc, p) => acc + p.soc, 0) / packCount);
+            const totalCurr = data.packs.reduce((acc, p) => acc + parseFloat(p.curr), 0).toFixed(1);
+            const avgVolt = (data.packs.reduce((acc, p) => acc + p.volt, 0) / packCount).toFixed(1);
+            const totalKw = ((avgVolt * Math.abs(totalCurr)) / 1000).toFixed(2);
+
+            document.getElementById('packCountBadge').innerText = `${packCount} Packs 16S`;
+            document.getElementById('flowBatSoc').innerText = `${avgSoc}%`;
+            document.getElementById('batteryGraphicLevel').style.width = `${avgSoc}%`;
+            document.getElementById('flowBatVoltCurr').innerText = `${avgVolt}V | ${totalCurr >= 0 ? '+' : ''}${totalCurr}A`;
+            
+            if (parseFloat(totalCurr) >= 0) {
+                document.getElementById('flowBatStatus').innerHTML = `<i class="fa-solid fa-bolt text-emerald-400 mr-1"></i>Đang Nạp Tự Động (${totalKw} kW)`;
+                document.getElementById('flowBatTimeRemaining').innerText = `Thời gian sạc đầy: ~${((100 - avgSoc) / 15).toFixed(1)} giờ`;
+            } else {
+                document.getElementById('flowBatStatus').innerHTML = `<i class="fa-solid fa-plug-circle-bolt text-rose-400 mr-1"></i>Đang Xả Cấp Điện EPS (${totalKw} kW)`;
+                document.getElementById('flowBatTimeRemaining').innerText = `Thời gian xả còn lại: ~${((avgSoc - 10) / 12).toFixed(1)} giờ`;
+            }
+
+            document.getElementById('flowTotalCap').innerText = `${packCount * 100} Ah / ${(packCount * 5.12).toFixed(1)} kWh`;
+        }
+
+        // Bật tắt chế độ giả lập mất điện lưới
+        function toggleGridSimulation() {
+            const data = stationsDatabase[currentStation];
+            data.isGridLost = !data.isGridLost;
+            if (data.isGridLost) {
+                data.grid.power = 0.00;
+                data.grid.status = "MẤT ĐIỆN LƯỚI (0V / 0Hz)";
+                data.load.power = 0.00;
+                data.eps.power = 2.10;
+                data.eps.status = "CẤP TẢI EPS LIÊN TỤC (230V/50Hz)";
+                // Đảo chiều pin sang xả cấp điện
+                data.packs.forEach(p => p.curr = (-Math.abs(parseFloat(p.curr))).toFixed(1) + " A");
+            } else {
+                data.grid.power = 0.85;
+                data.grid.status = "228V / 50Hz (Hòa Lưới Bình Thường)";
+                data.load.power = 2.20;
+                data.eps.power = 0.00;
+                data.eps.status = "Standby (Có lưới)";
+                // Đảo chiều pin sang nạp
+                data.packs.forEach(p => p.curr = "+" + Math.abs(parseFloat(p.curr)).toFixed(1) + " A");
+            }
+            renderEnergyFlow(data);
         }
 
         function loadStationConfig(cfg) {
@@ -537,12 +757,13 @@
             document.getElementById('cfgMaxDsgCurr').value = cfg.maxDsgCurr;
             document.getElementById('valMaxDsgCurr').innerText = cfg.maxDsgCurr + ' A';
             document.getElementById('cfgBulkVolt').value = cfg.bulkVolt;
+            document.getElementById('cfgEpsEnable').checked = cfg.epsEnable;
             document.getElementById('cfgOnGridSoc').value = cfg.onGridSoc;
             document.getElementById('valOnGridSoc').innerText = cfg.onGridSoc + ' %';
             document.getElementById('cfgOffGridSoc').value = cfg.offGridSoc;
             document.getElementById('valOffGridSoc').innerText = cfg.offGridSoc + ' %';
-            document.getElementById('cfgAcChargeSoc').value = cfg.acChgSoc;
-            document.getElementById('cfgAcChgCurr').value = cfg.acChgCurr;
+            document.getElementById('cfgEpsVolt').value = cfg.epsVolt;
+            document.getElementById('cfgEpsFreq').value = cfg.epsFreq;
             document.getElementById('cfgWorkMode').value = cfg.workMode;
             document.getElementById('cfgTouEnable').checked = cfg.touEnable;
             document.getElementById('cfgTouStart').value = cfg.touStart;
@@ -552,37 +773,20 @@
 
         function saveAndApplyConfig() {
             const currentObj = stationsDatabase[currentStation];
-            const updatedConfig = {
-                batType: document.getElementById('cfgBatType').value,
-                maxChgCurr: parseInt(document.getElementById('cfgMaxChgCurr').value),
-                maxDsgCurr: parseInt(document.getElementById('cfgMaxDsgCurr').value),
-                bulkVolt: parseFloat(document.getElementById('cfgBulkVolt').value),
-                onGridSoc: parseInt(document.getElementById('cfgOnGridSoc').value),
-                offGridSoc: parseInt(document.getElementById('cfgOffGridSoc').value),
-                acChgSoc: parseInt(document.getElementById('cfgAcChargeSoc').value),
-                acChgCurr: parseInt(document.getElementById('cfgAcChgCurr').value),
-                workMode: document.getElementById('cfgWorkMode').value,
-                touEnable: document.getElementById('cfgTouEnable').checked,
-                touStart: document.getElementById('cfgTouStart').value,
-                touEnd: document.getElementById('cfgTouEnd').value,
-                zeroExport: document.getElementById('cfgZeroExport').checked
-            };
-
-            currentObj.config = updatedConfig;
-            alert(`[GHI THÀNH CÔNG] Đã gửi gói lệnh cài đặt sạc/xả tới ${currentObj.invModel}:\n` +
-                  `- Dòng sạc tối đa: ${updatedConfig.maxChgCurr}A\n` +
-                  `- Dòng xả tối đa: ${updatedConfig.maxDsgCurr}A\n` +
-                  `- Ngắt xả có lưới: ${updatedConfig.onGridSoc}% | Mất lưới: ${updatedConfig.offGridSoc}%\n` +
-                  `- Khung giờ sạc lưới: ${updatedConfig.touEnable ? (updatedConfig.touStart + ' -> ' + updatedConfig.touEnd) : 'Tắt'}`);
+            alert(`[GHI THÀNH CÔNG] Đã gửi thông số tới ${currentObj.invModel}:\n` +
+                  `- Ngõ ra mất lưới (EPS): ${document.getElementById('cfgEpsEnable').checked ? 'BẬT' : 'TẮT'}\n` +
+                  `- Ngắt xả mất lưới (Off-grid Cut-off): ${document.getElementById('cfgOffGridSoc').value}%\n` +
+                  `- Điện áp & tần số EPS: ${document.getElementById('cfgEpsVolt').value}V / ${document.getElementById('cfgEpsFreq').value}Hz\n` +
+                  `- Dòng sạc/xả tối đa: ${document.getElementById('cfgMaxChgCurr').value}A / ${document.getElementById('cfgMaxDsgCurr').value}A`);
         }
 
         function resetDefaultConfig() {
-            if (confirm("Khôi phục thông số sạc/xả khuyến nghị của nhà sản xuất?")) {
+            if (confirm("Khôi phục cài đặt gốc theo khuyến nghị của hãng?")) {
                 loadStationConfig(stationsDatabase[currentStation].config);
             }
         }
 
-        // Pack rendering
+        // Multi-Pack Tab & Card
         function renderPackTabs(packs) {
             const container = document.getElementById('packTabButtons');
             container.innerHTML = '';
@@ -619,7 +823,7 @@
                     </div>
                     <div class="grid grid-cols-2 gap-1 text-[11px] mono text-slate-400">
                         <div>V: <span class="text-slate-200 font-semibold">${pack.volt}V</span></div>
-                        <div>A: <span class="text-slate-200 font-semibold">${pack.curr}</span></div>
+                        <div>A: <span class="${parseFloat(pack.curr) < 0 ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${pack.curr}</span></div>
                         <div>ΔV: <span class="${pack.delta < 30 ? 'text-cyan-400' : 'text-amber-400'} font-semibold">${pack.delta}mV</span></div>
                         <div>T: <span class="text-slate-200 font-semibold">${pack.mosTemp}°C</span></div>
                     </div>
